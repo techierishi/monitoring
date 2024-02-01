@@ -2,7 +2,6 @@
 
 ```bash
 mkdir -p grafana/provisioning
-touch grafana.ini
 docker-compose up -d
 ```
 
