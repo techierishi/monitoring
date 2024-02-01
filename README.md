@@ -10,3 +10,5 @@ docker-compose up -d
 ```bash
 docker-compose restart grafana
 ```
+
+> Import `jmx_dashboard_rev5.json` in grafana to see JMX dashboard

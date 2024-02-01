@@ -24,6 +24,14 @@ services:
       - monitoring-network
     ports:
       - 9093:9093
+
+  jmx-exporter:
+    image: bitnami/jmx-exporter:latest
+    networks:
+      - monitoring-network
+    ports:
+      - 5556:5556
+
   grafana:
     image: grafana/grafana:7.2.0
     volumes:
@@ -31,7 +39,6 @@ services:
       - "./grafana/provisioning/:/etc/grafana/provisioning/"
       - "grafana-storage:/var/lib/grafana"
     environment:
-      - GF_INSTALL_PLUGINS=user=grafana-piechart-panel,simpod-json-datasource
       - GF_DATABASE_TYPE=postgres
       - GF_DATABASE_NAME=grafana
       - GF_DATABASE_USER=grafana
@@ -69,7 +76,7 @@ services:
     networks:
       - monitoring-network
     volumes:
-      - dbgate-storage:/root/.dbgate
+      - dbgate-data:/root/.dbgate
     ports:
       - 3100:3000
   
@@ -78,7 +85,7 @@ volumes:
     driver: local
   grafana-storage:
     driver: local
-  dbgate-storage:
+  dbgate-data:
     driver: local
 
 networks:
