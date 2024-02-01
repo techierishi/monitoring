@@ -1,4 +1,5 @@
 version: '3'
+
 services:
   prometheus:
     image: prom/prometheus
@@ -6,13 +7,13 @@ services:
       - "./prometheus.yml:/etc/prometheus/prometheus.yml"
       - "./rules.yml:/etc/prometheus/rules.yml"
     networks:
-      - localprom
+      - monitoring-network
     ports:
       - 9090:9090
   node-exporter:
     image: prom/node-exporter
     networks:
-      - localprom
+      - monitoring-network
     ports:
       - 9100:9100
   alert-manager:
@@ -20,49 +21,64 @@ services:
     volumes:
       - "./alertmanager.yml:/alertmanager/alertmanager.yml"
     networks:
-      - localprom
+      - monitoring-network
     ports:
       - 9093:9093
   grafana:
-    image: grafana/grafana:6.5.3
+    image: grafana/grafana:7.2.0
     volumes:
-      - ./grafana/provisioning/:/etc/grafana/provisioning/
-      - grafana-storage:/var/lib/grafana
+      - "./grafana.ini:/etc/grafana/grafana.ini"
+      - "./grafana/provisioning/:/etc/grafana/provisioning/"
+      - "grafana-storage:/var/lib/grafana"
     environment:
+      - GF_INSTALL_PLUGINS=user=grafana-piechart-panel,simpod-json-datasource
       - GF_DATABASE_TYPE=postgres
       - GF_DATABASE_NAME=grafana
       - GF_DATABASE_USER=grafana
       - GF_DATABASE_PASSWORD=grafana
-      - GF_DATABASE_HOST=db:5432
+      - GF_DATABASE_HOST=pgdb:5432
       - GF_DATABASE_SSL_MODE=disable
       - GF_SESSION_PROVIDER=postgres
-      - GF_SESSION_PROVIDER_CONFIG=user=grafana password=grafana host=db port=5432 dbname=grafana sslmode=disable
+      - GF_SESSION_PROVIDER_CONFIG=user=grafana password=grafana host=pgdb port=5432 dbname=grafana sslmode=disable
     ports:
       - "127.0.0.1:3000:3000"
+    networks:
+      - monitoring-network
     depends_on:
-      db:
+      pgdb:
         condition: service_healthy
-  db:
-    image: postgres:11
+  pgdb:
+    image: postgres:16.1
     command: -c shared_preload_libraries='pg_stat_statements' -c pg_stat_statements.max=10000 -c pg_stat_statements.track=all
     environment:
       TZ: UTC
       POSTGRES_DATABASE: grafana
       POSTGRES_USER: grafana
       POSTGRES_PASSWORD: grafana
+    networks:
+      - monitoring-network
     volumes:
-      - grafana-pg-storage:/var/lib/postgresql/data
+      - pgdb-storage:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d grafana -U grafana"]
       timeout: 10s
       retries: 10
-
-networks:
-  localprom:
-    driver: bridge
+  dbgate:
+    image: dbgate/dbgate:alpine
+    restart: always
+    networks:
+      - monitoring-network
+    volumes:
+      - dbgate-data:/root/.dbgate
+    ports:
+      - 3100:3000
   
 volumes:
-  grafana-pg-storage:
-    external: true
+  pgdb-storage:
+    driver: local
   grafana-storage:
-    external: true
+    driver: local
+
+networks:
+  monitoring-network:
+    driver: bridge
