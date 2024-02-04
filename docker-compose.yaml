@@ -26,12 +26,14 @@ services:
       - 9093:9093
 
   jmx-exporter:
-    image: bitnami/jmx-exporter:latest
+    build: sample-app
     networks:
       - monitoring-network
     ports:
-      - 5556:5556
-
+      - "9010:9010"
+      - "5005:5005"
+      - "12345:12345"
+  
   grafana:
     image: grafana/grafana:7.2.0
     volumes:
