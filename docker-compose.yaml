@@ -35,12 +35,13 @@ services:
       - "12345:12345"
   
   grafana:
-    image: grafana/grafana:7.2.0
+    image: grafana/grafana:10.0.10
     volumes:
       - "./grafana.ini:/etc/grafana/grafana.ini"
       - "./grafana/provisioning/:/etc/grafana/provisioning/"
       - "grafana-storage:/var/lib/grafana"
     environment:
+      - GF_INSTALL_PLUGINS=simpod-json-datasource,grafana-clock-panel,volkovlabs-form-panel
       - GF_DATABASE_TYPE=postgres
       - GF_DATABASE_NAME=grafana
       - GF_DATABASE_USER=grafana
